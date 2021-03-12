@@ -37,9 +37,9 @@ if __name__ == '__main__':
     optimize_time = 0.1
 
     times = []
-    print('FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCK')
+
     #model.parallelize()
-    print('FUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUCK')
+
 
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch
