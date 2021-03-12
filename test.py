@@ -41,7 +41,7 @@ from PIL import Image as img
 import ntpath
 import dominate
 
-print("Stupid Ass")
+print("William is a stupid ass and he is now testing this stupid network.")
 
 if __name__ == '__main__':
     opt = TestOptions().parse()  # get test options
