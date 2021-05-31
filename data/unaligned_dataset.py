@@ -118,8 +118,8 @@ class UnalignedDataset(BaseDataset):
             mask_T_path = self.mask_T_paths[index % self.mask_T_size]  # make sure index is within then range
             img_array_mask_S1 = np.array(Image.open(mask_S1_path), dtype=np.float32)
             img_array_mask_T = np.array(Image.open(mask_T_path), dtype=np.float32)
-            mask_S1 = torch.from_numpy(img_array_mask_S1).unsqueeze(0) / 255.0
-            mask_T = torch.from_numpy(img_array_mask_T).unsqueeze(0) / 255.0
+            mask_S1 = torch.from_numpy(img_array_mask_S1).unsqueeze(0)
+            mask_T = torch.from_numpy(img_array_mask_T).unsqueeze(0)
 
             return {'mask_T': mask_T, 'mask_S1': mask_S1, 'A': A, 'B': B, 'S1_paths': S1_path, 'S2_paths': S2_path,
                     'S3_paths': S3_path, 'mask_T_paths': mask_T_path, 'mask_S1_paths': mask_S1_path, 'B_paths': B_path}
