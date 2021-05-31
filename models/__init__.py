@@ -29,6 +29,7 @@ def find_model_using_name(model_name):
     be instantiated. It has to be a subclass of BaseModel,
     and it is case-insensitive.
     """
+
     model_filename = "models." + model_name + "_model"
     modellib = importlib.import_module(model_filename)
     model = None
@@ -58,8 +59,8 @@ def create_model(opt):
     This is the main interface between this package and 'train.py'/'test.py'
 
     Example:
-        >>> from models import create_model
-        >>> model = create_model(opt)
+        #>>> from models import create_model
+        #>>> model = create_model(opt)
     """
     model = find_model_using_name(opt.model)
     instance = model(opt)

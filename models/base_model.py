@@ -3,7 +3,8 @@ import torch
 from collections import OrderedDict
 from abc import ABC, abstractmethod
 from . import networks
-
+from torchsummary import summary
+from skimage.color import rgb2gray
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -14,7 +15,6 @@ class BaseModel(ABC):
         -- <optimize_parameters>:           calculate losses, gradients, and update network weights.
         -- <modify_commandline_options>:    (optionally) add model-specific options and set default options.
     """
-
     def __init__(self, opt):
         """Initialize the BaseModel class.
 
@@ -41,6 +41,7 @@ class BaseModel(ABC):
         self.visual_names = []
         self.optimizers = []
         self.image_paths = []
+        self.image_paths_save = []
         self.metric = 0  # used for learning rate policy 'plateau'
 
     @staticmethod
@@ -100,8 +101,14 @@ class BaseModel(ABC):
 
         self.print_networks(opt.verbose)
 
+    def print_model_names(self):
+        for name in self.model_names:
+            print(name)
+
+
     def parallelize(self):
         for name in self.model_names:
+            print('We are using Parallel Training with', len(self.opt.gpu_ids), 'GPUs on', name)
             if isinstance(name, str):
                 net = getattr(self, 'net' + name)
                 setattr(self, 'net' + name, torch.nn.DataParallel(net, self.opt.gpu_ids))
@@ -133,6 +140,10 @@ class BaseModel(ABC):
     def get_image_paths(self):
         """ Return image paths that are used to load current data"""
         return self.image_paths
+
+    def get_image_paths_save(self):
+        """ Return image paths that are used to load current data"""
+        return self.image_paths_save
 
     def update_learning_rate(self):
         """Update learning rates for all the networks; called at the end of every epoch"""
@@ -237,6 +248,7 @@ class BaseModel(ABC):
                 for param in net.parameters():
                     num_params += param.numel()
                 if verbose:
+                    #summary(net, (3, 256, 256))
                     print(net)
                 print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
         print('-----------------------------------------------')
@@ -256,3 +268,10 @@ class BaseModel(ABC):
 
     def generate_visuals_for_evaluation(self, data, mode):
         return {}
+
+
+
+
+
+
+

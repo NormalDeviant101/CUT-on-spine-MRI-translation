@@ -7,6 +7,15 @@ from torch.optim import lr_scheduler
 import numpy as np
 from .stylegan_networks import StyleGAN2Discriminator, StyleGAN2Generator, TileStyleGAN2Discriminator
 
+
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+import torch.distributed.autograd as dist_autograd
+from torch.nn.parallel import DistributedDataParallel
+from torch import optim
+from torch.distributed.optim import DistributedOptimizer
+from torch.distributed.rpc import RRef
+
 ###############################################################################
 # Helper Functions
 ###############################################################################
@@ -252,6 +261,8 @@ def define_G(input_nc, output_nc, ngf, netG, norm='batch', use_dropout=False, in
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=6, opt=opt)
     elif netG == 'resnet_4blocks':
         net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=4, opt=opt)
+    elif netG == 'resnet_1block':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=1, opt=opt)
     elif netG == 'unet_128':
         net = UnetGenerator(input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif netG == 'unet_256':
@@ -316,6 +327,15 @@ def define_D(input_nc, ndf, netD, n_layers_D=3, norm='batch', init_type='normal'
     """
     net = None
     norm_layer = get_norm_layer(norm_type=norm)
+
+    print(input_nc, ' - the number of channels in input images')
+    print(ndf, ' - the number of filters in the first conv layer')
+    print(netD, ' - the architectures name: basic | n_layers | pixel')
+    print(n_layers_D, ' - the number of conv layers in the discriminator; effective when netD==n_layers')
+    print(norm , ' - the type of normalization layers used in the network.')
+    print(init_type, ' - the name of the initialization method.')
+    print(init_gain, ' -  scaling factor for normal, xavier and orthogonal.')
+    print(gpu_ids, ' -  which GPUs the network runs on: e.g., 0,1,2.')
 
     if netD == 'basic':  # default PatchGAN classifier
         net = NLayerDiscriminator(input_nc, ndf, n_layers=3, norm_layer=norm_layer, no_antialias=no_antialias,)
@@ -543,7 +563,11 @@ class PatchSampleF(nn.Module):
     def create_mlp(self, feats):
         for mlp_id, feat in enumerate(feats):
             input_nc = feat.shape[1]
+            #pg = torch.distributed.init_process_group(backend='nccl', world_size=4, init_method='...')
             mlp = nn.Sequential(*[nn.Linear(input_nc, self.nc), nn.ReLU(), nn.Linear(self.nc, self.nc)])
+            #mlp = nn.Sequential(*[nn.Linear(input_nc, self.nc), nn.ReLU(), nn.Linear(self.nc, self.nc)])
+            #mlp = DistributedDataParallel(nn.Seqential(*[nn.Linear(input_nc, self.nc), nn.ReLU(), nn.Linear(self.nc, self.nc)]), pg)
+
             if len(self.gpu_ids) > 0:
                 mlp.cuda()
             setattr(self, 'mlp_%d' % mlp_id, mlp)
@@ -554,6 +578,12 @@ class PatchSampleF(nn.Module):
         return_ids = []
         return_feats = []
         if self.use_mlp and not self.mlp_init:
+            # print('ATTENTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            #
+            # print(type(feats[0]))
+            # print(type(feats[1]))
+            # print('shape of the feats 0 IS', np.shape(feats[0]))
+            # print('shape of the feats 1 IS', np.shape(feats[1]))
             self.create_mlp(feats)
         for feat_id, feat in enumerate(feats):
             B, H, W = feat.shape[0], feat.shape[2], feat.shape[3]
@@ -915,7 +945,7 @@ class ResnetGenerator(nn.Module):
     We adapt Torch code and idea from Justin Johnson's neural style transfer project(https://github.com/jcjohnson/fast-neural-style)
     """
 
-    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6, padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None):
+    def __init__(self, input_nc, output_nc, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=True, n_blocks=6, padding_type='reflect', no_antialias=False, no_antialias_up=False, opt=None):
         """Construct a Resnet-based generator
 
         Parameters:
@@ -987,14 +1017,13 @@ class ResnetGenerator(nn.Module):
         if len(layers) > 0:
             feat = input
             feats = []
+            #print(type(feats))
             for layer_id, layer in enumerate(self.model):
-                # print(layer_id, layer)
-                feat = layer(feat)
                 if layer_id in layers:
-                    # print("%d: adding the output of %s %d" % (layer_id, layer.__class__.__name__, feat.size(1)))
+                    #print("%d: adding the output of %s %d" % (layer_id, layer.__class__.__name__, feat.size(1)))
                     feats.append(feat)
                 else:
-                    # print("%d: skipping %s %d" % (layer_id, layer.__class__.__name__, feat.size(1)))
+                    #print("%d: skipping %s %d" % (layer_id, layer.__class__.__name__, feat.size(1)))
                     pass
                 if layer_id == layers[-1] and encode_only:
                     # print('encoder only return features')
