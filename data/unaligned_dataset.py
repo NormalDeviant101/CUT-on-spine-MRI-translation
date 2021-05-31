@@ -1,19 +1,13 @@
 import os.path
-from data.base_dataset import BaseDataset, get_transform
+from data.base_dataset import BaseDataset
 from data.image_folder import make_dataset
 
 from PIL import Image
 import random
-import util.util as util
 import numpy as np
 from torchvision import transforms
 import numpy as np
 import torch
-from skimage.color import rgb2gray
-from matplotlib import cm
-import SimpleITK as sitk
-import imageio
-import matplotlib.image as mpimg
 #Script Fix from Github for transform functions
 transform = transforms.Compose([transforms.ToTensor(),
 transforms.Normalize((0.5,), (0.5,))
@@ -74,7 +68,11 @@ class UnalignedDataset(BaseDataset):
             self.mask_T_size = len(self.mask_T_paths)  # get the size of dataset masks
 
 
-
+    def normalize(self, x):
+        x_min = x.amin()
+        x_max = x.amax()
+        x = (x - x_min) / x_max * 2 -1
+        return x
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.
@@ -111,8 +109,8 @@ class UnalignedDataset(BaseDataset):
         img_array_S2 = torch.from_numpy(img_array_S2).unsqueeze(0)
         img_array_S3 = torch.from_numpy(img_array_S3).unsqueeze(0)
 
-        A = torch.cat([img_array_S1, img_array_S2, img_array_S3], dim=0).clamp(-1,1)  # shape (3, 320, 320)
-        B = torch.from_numpy(img_array_B).unsqueeze(0).clamp(-1,1)
+        A = self.normalize(torch.cat([img_array_S1, img_array_S2, img_array_S3], dim=0))  # shape (3, 320, 320)
+        B = self.normalize(torch.from_numpy(img_array_B).unsqueeze(0))
 
 
         if self.opt.phase == "train":
