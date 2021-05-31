@@ -195,7 +195,6 @@ class CUTModel(BaseModel):
 
         self.fake = self.netG(self.real)
         self.fake_B = self.fake[:self.real_A.size(0)]
-        self.fake_B = self.fake_B.expand(-1, 3, -1, -1)
         if self.opt.nce_idt:
             self.idt_B = self.fake[self.real_A.size(0):]
 
@@ -203,7 +202,7 @@ class CUTModel(BaseModel):
         # Loss of the Mask_Fake(Mask_A) multiply with Fake Image ; Masked Fake.
         # print('The size of mask A is: ', self.mask_A.shape)
         # print('The size of fake B is: ', self.fake_B.shape)
-        fake = self.fake.detach()
+        fake = self.fake_B.detach()
         self.mask_fake = self.netD(self.mask_A * fake)
         loss_D_mask_fake = self.criterionGAN(self.mask_fake, False)
         self.loss_D_mask_fake = loss_D_mask_fake.mean()
@@ -246,7 +245,7 @@ class CUTModel(BaseModel):
             self.loss_G_GAN = 0.0
 
         if self.opt.lambda_NCE > 0.0:
-            self.loss_NCE = self.calculate_NCE_loss(self.real_A, self.fake_B)
+            self.loss_NCE = self.calculate_NCE_loss(self.real_A, self.fake_B.expand(-1, 3, -1, -1))
         else:
             self.loss_NCE, self.loss_NCE_bd = 0.0, 0.0
 

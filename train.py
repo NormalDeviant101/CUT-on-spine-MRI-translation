@@ -27,7 +27,8 @@ if __name__ == '__main__':
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
 
     opt.phase='test'
-    test_dataset = create_dataset(opt).__iter__()  # create a dataset given opt.dataset_mode and other options
+    test_dataset = create_dataset(opt)
+    test_dataset_iter = iter(test_dataset)  # create a dataset given opt.dataset_mode and other options
     opt.phase='train'
 
     dataset_size = len(dataset)    # get the number of images in the dataset.
@@ -82,7 +83,11 @@ if __name__ == '__main__':
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 opt.phase='test'
-                test_data = test_dataset.__next__()
+                test_data = next(test_dataset_iter, None)
+                if test_data is None:
+                    test_dataset_iter = iter(test_dataset)
+                    test_data = next(test_dataset_iter, None)
+
                 model.set_input(test_data)
                 model.test()
                 opt.phase='train'
