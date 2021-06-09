@@ -27,7 +27,6 @@ See training and test tips at: https://github.com/junyanz/pytorch-CycleGAN-and-p
 See frequently asked questions at: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/docs/qa.md
 """
 import os
-import glob
 from options.test_options import TestOptions
 from data import create_dataset
 from models import create_model
@@ -36,12 +35,6 @@ from util.visualizer import Visualizer
 from util import html
 import util.util as util
 import numpy as np
-from skimage.color import rgb2gray
-from PIL import Image as img
-import ntpath
-import dominate
-
-print("Stupid Ass")
 
 if __name__ == '__main__':
     opt = TestOptions().parse()  # get test options
@@ -51,6 +44,7 @@ if __name__ == '__main__':
     opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
     opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
     opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
+    opt.use_mask = False
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     train_dataset = create_dataset(util.copyconf(opt, phase="train"))
     model = create_model(opt)      # create a model given opt.model and other options

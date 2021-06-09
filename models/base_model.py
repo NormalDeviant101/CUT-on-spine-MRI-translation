@@ -98,7 +98,8 @@ class BaseModel(ABC):
             self.load_networks(load_suffix)
 
         self.print_networks(opt.verbose)
-        self.save_network_architecture()
+        if self.opt.phase=="train":
+            self.save_network_architecture()
 
     def print_model_names(self):
         for name in self.model_names:

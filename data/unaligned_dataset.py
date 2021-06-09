@@ -36,7 +36,7 @@ class UnalignedDataset(BaseDataset):
             self.dir_mask_S1 = os.path.join(opt.dataroot, opt.phase + 'A', 'mask_S1')  # create a path '/path/to/data/trainA/mask_S1'
             self.dir_mask_T = os.path.join(opt.dataroot, opt.phase + 'B', 'mask_T')  # create a path '/path/to/data/trainB/mask_T'
 
-        if opt.phase == "test" and not os.path.exists(self.dir_S1) and not os.path.exists(self.dir_S2) and not os.path.exists(self.dir_S3)\
+        if opt.phase == "test" and (not os.path.exists(self.dir_S1) or not os.path.exists(self.dir_S2) or not os.path.exists(self.dir_S3))\
            and os.path.exists(os.path.join(opt.dataroot, "valS1")) and os.path.exists(os.path.join(opt.dataroot, "valS2")) and os.path.exists(os.path.join(opt.dataroot, "valS3")):
            #self.dir_A = os.path.join(opt.dataroot, "valA")
             self.dir_S1 = os.path.join(opt.dataroot, "valS1")
@@ -96,7 +96,7 @@ class UnalignedDataset(BaseDataset):
         S2_path = self.S2_paths[index % self.S2_size]  # make sure index is within then range
         S3_path = self.S3_paths[index % self.S3_size]  # make sure index is within then range
 
-        B_path = self.B_paths [index % self.B_size]  # make sure index is within then range
+        B_path = self.B_paths[index % self.B_size]  # make sure index is within then range
         if self.opt.serial_batches:   # make sure index is within then range
             index_B = index % self.B_size
         else:   # randomize the index for domain B to avoid fixed pairs.
