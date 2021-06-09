@@ -83,6 +83,8 @@ if __name__ == '__main__':
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
                 opt.phase='test'
+                tmp = opt.serial_batches
+                opt.serial_batches=True
                 test_data = next(test_dataset_iter, None)
                 if test_data is None:
                     test_dataset_iter = iter(test_dataset)
@@ -91,6 +93,7 @@ if __name__ == '__main__':
                 model.set_input(test_data)
                 model.test()
                 opt.phase='train'
+                opt.serial_batches=tmp
                 save_result = total_iters % opt.update_html_freq == 0
                 visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
