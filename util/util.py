@@ -89,8 +89,8 @@ def save_image(image_numpy, image_path, aspect_ratio=1.0):
         image_path (str)          -- the path of the image
     """
     #image_numpy = (image_numpy[:, :, 0] * 255).astype(np.uint8)
-    image_pil = Image.fromarray((image_numpy[:,:,0] * 255).astype(np.uint8))
-    h, w = image_numpy[:,:,0].shape
+    image_pil = Image.fromarray(image_numpy)
+    h, w, _ = image_numpy.shape
 
     if aspect_ratio is None:
         pass
@@ -98,7 +98,7 @@ def save_image(image_numpy, image_path, aspect_ratio=1.0):
         image_pil = image_pil.resize((h, int(w * aspect_ratio)), Image.BICUBIC)
     elif aspect_ratio < 1.0:
         image_pil = image_pil.resize((int(h / aspect_ratio), w), Image.BICUBIC)
-    image_pil.convert('RGB').convert('L').save(image_path)
+    image_pil.save(image_path)
 
 
 def print_numpy(x, val=True, shp=False):

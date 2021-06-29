@@ -3,8 +3,6 @@ import torch
 from collections import OrderedDict
 from abc import ABC, abstractmethod
 from . import networks
-from torchsummary import summary
-from skimage.color import rgb2gray
 
 class BaseModel(ABC):
     """This class is an abstract base class (ABC) for models.
@@ -100,10 +98,25 @@ class BaseModel(ABC):
             self.load_networks(load_suffix)
 
         self.print_networks(opt.verbose)
+        if self.opt.phase=="train":
+            self.save_network_architecture()
 
     def print_model_names(self):
         for name in self.model_names:
             print(name)
+
+    def save_network_architecture(self):
+        networks = [getattr(self, 'net' + name) for name in self.model_names]
+        save_filename = 'architecture.txt'
+        save_path = os.path.join(self.save_dir, save_filename)
+
+        architecture = ''
+        for n in networks:
+            architecture += str(n) + '\n'
+        with open(save_path, 'w') as f:
+            f.write(architecture)
+            f.flush()
+            f.close()
 
 
     def parallelize(self):

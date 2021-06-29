@@ -25,21 +25,24 @@ print()
 if __name__ == '__main__':
     opt = TrainOptions().parse()   # get training options
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
+
+    opt.phase='test'
+    test_dataset = create_dataset(opt)
+    test_dataset_iter = iter(test_dataset)  # create a dataset given opt.dataset_mode and other options
+    opt.phase='train'
+
     dataset_size = len(dataset)    # get the number of images in the dataset.
 
     model = create_model(opt)      # create a model given opt.model and other option
 
     print('The number of training images = %d' % dataset_size)
-    print(model.print_networks(verbose=True))
     visualizer = Visualizer(opt)   # create a visualizer that display/save images and plots
     opt.visualizer = visualizer
     total_iters = 0                # the total number of training iterations
     optimize_time = 0.1
 
     times = []
-
     #model.parallelize()
-
 
     for epoch in range(opt.epoch_count, opt.n_epochs + opt.n_epochs_decay + 1):    # outer loop for different epochs; we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>
         epoch_start_time = time.time()  # timer for entire epoch
@@ -79,8 +82,19 @@ if __name__ == '__main__':
             optimize_time = (time.time() - optimize_start_time) / batch_size * 0.005 + 0.995 * optimize_time
 
             if total_iters % opt.display_freq == 0:   # display images on visdom and save images to a HTML file
+                opt.phase='test'
+                tmp = opt.serial_batches
+                opt.serial_batches=True
+                test_data = next(test_dataset_iter, None)
+                if test_data is None:
+                    test_dataset_iter = iter(test_dataset)
+                    test_data = next(test_dataset_iter, None)
+
+                model.set_input(test_data)
+                model.test()
+                opt.phase='train'
+                opt.serial_batches=tmp
                 save_result = total_iters % opt.update_html_freq == 0
-                model.compute_visuals()
                 visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk

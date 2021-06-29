@@ -27,7 +27,6 @@ See training and test tips at: https://github.com/junyanz/pytorch-CycleGAN-and-p
 See frequently asked questions at: https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix/blob/master/docs/qa.md
 """
 import os
-import glob
 from options.test_options import TestOptions
 from data import create_dataset
 from models import create_model
@@ -36,12 +35,6 @@ from util.visualizer import Visualizer
 from util import html
 import util.util as util
 import numpy as np
-from skimage.color import rgb2gray
-from PIL import Image as img
-import ntpath
-import dominate
-
-print("William is a stupid ass and he is now testing this stupid network.")
 
 if __name__ == '__main__':
     opt = TestOptions().parse()  # get test options
@@ -51,6 +44,7 @@ if __name__ == '__main__':
     opt.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
     opt.no_flip = True    # no flip; comment this line if results on flipped images are needed.
     opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
+    opt.use_mask = False
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
     train_dataset = create_dataset(util.copyconf(opt, phase="train"))
     model = create_model(opt)      # create a model given opt.model and other options
@@ -76,4 +70,112 @@ if __name__ == '__main__':
             print('processing (%04d)-th image... %s' % (i, img_path))
         save_images(webpage, visuals, img_path)
     webpage.save()  # save the HTML
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+print("____________________________________________________________________________________________________")
+print("__                                                                                                __")
+print("__                          DEBUGGING PART OF THE SCRIPT STARTED WATCH OUT!                       __")
+print("__                                                                                                __")
+print("____________________________________________________________________________________________________")
+
+
+print('--------------------------------- Print Image Path of model -----------------------------------------')
+img_path = model.get_image_paths()
+short_path = os.path.basename(img_path).strip("']")
+print(img_path)
+print(type(img_path))
+print(short_path)
+name = os.path.splitext(short_path)[0]
+print(name)
+#print(img_path_save)
+print('--------------------------------- Print Image Path of model -----------------------------------------')
+##img_ordered_dict = visuals
+#print(type(img_ordered_dict))
+#for img_dict in img_ordered_dict.items():
+    #print(type(img_dict))
+    #print(img_dict)
+    #im_data = img_dict.values()
+    #im = util.tensor2im(im_data)
+    #print(np.shape(im))
+
+#print(type(img_dict))
+#print(img_dict.keys())
+#print(np.shape(im))
+#for label in img_dict:
+    #print(label)
+
+
+
+print('--------------------------------- Print Dimension of html Real_A size --------------------------------')
+print(type(visuals['real_A']))
+print(np.shape(visuals['real_A']))
+
+print('--------------------------------- Print Dimension of html fake_B size --------------------------------')
+print(type(visuals['fake_B']))
+print(np.shape(visuals['fake_B']))
+
+print('--------------------------------- Print Dimension of html Real_B size --------------------------------')
+print(type(visuals['real_B']))
+print(np.shape(visuals['real_B']))
+
+print('--------------------------------- Print image directory of the webpage -------------------------------')
+#image_dir = webpage.get_image_dir()
+#print(type(image_dir))
+#print(type(dataset))
+
+#for data in enumerate(dataset):
+    #print(img_path)
+    #print(type(img_path))
+    #short_path = ntpath.basename(img_path[2:42])
+    #rint(short_path)
+    #name = os.path.splitext(short_path)[0]
+    #print(name)
+
+print('--------------------------------- Print dataset information of the test -------------------------------')
+print(type(dataset))
+print("____________________________________________________________________________________________________")
+print("__                                                                                                __")
+print("__                          DEBUGGING PART 2         !!!!!!!!!!                                   __")
+print("__                                                                                                __")
+print("____________________________________________________________________________________________________")
+
+print('--------------------------------- Print Names of the images ----------------------------------------')
+print(type(name))
+print(len(name))
+print(name)
+print('--------------------------------- Print real_A and real_B and Fake_B information -------------------')
+print(type(model.get_real_A()))
+print(np.shape(model.get_real_A()))
+print('--------------------------------- Print Visual information -----------------------------------------')
+
+print(type(visuals))
+print(len(visuals))
+for key, value in visuals.items():
+    print(key, ' with shape ', np.shape(value))
+for label, im_data in visuals.items():
+    im_1 = util.tensor2im(im_data)
+    print(np.shape(im_1[:,:,0, np.newaxis]))
+
+print('--------------------------------- Print Image Path Information 1------------------------------------')
+print(type(model.get_image_paths()))
+print(len(model.get_image_paths()))
+print(model.get_image_paths_save())
+print('--------------------------------- Print Image Path Information 2------------------------------------')
+img_dir, short_path = Visualizer.save_image_path_checker(webpage, model.get_image_paths_save())
+print(type(img_dir))
+print(img_dir)
 

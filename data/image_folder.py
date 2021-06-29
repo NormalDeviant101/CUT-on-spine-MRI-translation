@@ -42,9 +42,9 @@ def normalize_array(array):
 #def default_loader(path):
     #return Image.open(path).convert('RGB')
 
-def default_loader(path):
+def default_loader(paths):
     images_array = []
-    for image in path[1]:
+    for path in paths[1]:
 		    image = np.array(Image.open(path))
 		    image = normalize_array(image)
 		    images_array.append(image)
@@ -72,47 +72,61 @@ def default_loader(path):
 
 class ImageFolder(data.Dataset):
     def __init__(self, root, transform=None, return_paths=False, loader=default_loader):
-            imgs_S1 = make_dataset(root) # read img path list s1, the list should be [img_paths, len(imgs)]
-            imgs_S2 = make_dataset(root) # read img path list s2, the list should be [img_paths, len(imgs)]
-            imgs_S3 = make_dataset(root) # read img path list s3, the list should be [img_paths, len(imgs)]
-            imgs_T = make_dataset(root)  # read img path list T, the list should be [img_paths, len(imgs)]
-            if len(imgs_S1) == 0: raise(RuntimeError("Found 0 images in: " + root + "\n" "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
+
+            imgs = make_dataset(root) # read img path list s2, the list should be [img_paths, len(imgs)]
+            # imgs_S1 = make_dataset(root) # read img path list s1, the list should be [img_paths, len(imgs)]
+            # print('please tell me wtf is going on here on img path s1 why is it a fooking root?!!')
+            # print(imgs_S1)
+            # imgs_S3 = make_dataset(root) # read img path list s3, the list should be [img_paths, len(imgs)]
+            # imgs_mask = make_dataset(root)  # read img path list mask, the list should be [img_paths, len(imgs)]
+            # imgs_T = make_dataset(root)  # read img path list T, the list should be [img_paths, len(imgs)]
+            if len(imgs) == 0: raise(RuntimeError("Found 0 images in: " + root + "\n" "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
 
             self.root = root
             self.imgs_S1 = imgs_S1
             self.imgs_S2 = imgs_S2
             self.imgs_S3 = imgs_S3
+            self.imgs_mask = imgs_mask
             self.imgs_T = imgs_T
             self.transform = transform
             self.return_paths = return_paths
             self.loader = loader
 
     def __getitem__(self, index):
-            path_S1 = self.imgs_S1[index] #read path from img path list with random index
-            path_S2 = self.imgs_S2[index] #read path from img path list with random index
-            path_S3 = self.imgs_S3[index] #read path from img path list with random index
+            path_S1 = self.imgs_S1[index]  #read path from img path list with random index
+            path_S2 = self.imgs_S2[index]  #read path from img path list with random index
+            path_S3 = self.imgs_S3[index]  #read path from img path list with random index
+            path_mask = self.imgs_mask[index]  # read path from img path list with random index
             path_T = self.imgs_T[index]  # read path from img path list with random index
 
-            img_array_S1 = self.loader(path_S1) #load img with Default img loader for img array
-            img_array_S2 = self.loader(path_S2) #load img with Default img loader for img array
-            img_array_S3 = self.loader(path_S3) #load img with Default img loader for img array
+            img_array_S1 = self.loader(path_S1)  #load img with Default img loader for img array
+            img_array_S2 = self.loader(path_S2)  #load img with Default img loader for img array
+            img_array_S3 = self.loader(path_S3)  #load img with Default img loader for img array
+            img_array_mask = self.loader(path_mask)  # load img with Default img loader for img array
             img_array_T = self.loader(path_T)  # load img with Default img loader for img array
 
             self.img_array_S1 = img_array_S1
             self.img_array_S2 = img_array_S2
             self.img_array_S3 = img_array_S3
+            self.img_array_mask = img_array_mask
             self.img_array_T = img_array_T
 
             if self.transform is not None:
                 img_S1 = self.transform(img_array_S1)
+                print(np.shape(img_array_S1))
                 img_S2 = self.transform(img_array_S2)
+                print(np.shape(img_array_S2))
                 img_S3 = self.transform(img_array_S3)
+                print(np.shape(img_array_S3))
+                img_mask = self.transform(img_array_mask)
+                print(np.shape(img_mask))
                 img_T = self.transform(img_array_T)
+
                 # transform concatenated img arrays to tensor
             if self.return_paths:
-                return img_S1, img_S2, img_S3, img_T,path_S1,path_S2,path_S3
+                return img_S1, img_S2, img_S3, img_mask, img_T, path_S1,path_S2,path_S3, path_mask
             else:
-                return img_S1, img_S2, img_S3, img_T
+                return img_S1, img_S2, img_S3, img_mask, img_T
 
     def __len__(self):
         return len(self.imgs)
