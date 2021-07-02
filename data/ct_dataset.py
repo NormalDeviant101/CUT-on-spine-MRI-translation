@@ -37,7 +37,7 @@ class CTDataset(BaseDataset):
 
         self.transformations = transforms.Compose([
             transforms.ToTensor(),
-            transforms.RandomCrop((148,100)),
+            # transforms.RandomCrop((148,100)),
             transforms.Lambda(lambda x: self.normalize(x)),
             # transforms.Pad((1,0,0,0), padding_mode='reflect')
         ])
