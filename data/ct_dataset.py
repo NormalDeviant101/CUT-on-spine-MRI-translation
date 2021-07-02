@@ -43,9 +43,10 @@ class CTDataset(BaseDataset):
         ])
 
     def normalize(self, x):
-        x_min = x.amin()
-        x_max = x.amax()
-        x = (x - x_min) / x_max * 2 -1
+        # x_min = x.amin()
+        # x_max = x.amax()
+        # x = (x - x_min) / x_max * 2 -1
+        x = (x-x.mean()) / 255.
         return x
 
     def __getitem__(self, index):
