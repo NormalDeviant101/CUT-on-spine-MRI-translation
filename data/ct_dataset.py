@@ -8,7 +8,30 @@ import random
 import numpy as np
 from torchvision import transforms
 import numpy as np
-import torch
+import torchvision.transforms.functional as F
+
+class RandomCropIfNecessary():
+    def __init__(self, size):
+        assert size%8==0
+        self.size = size
+        self.w = self.h = int(size/2)
+
+    def __call__(self, x):
+        if x.shape[1] + x.shape[2] > self.size:
+            if x.shape[1] < x.shape[2]:
+                h = min(x.shape[1], self.h)
+                w = self.size-h
+            else:
+                w = min(x.shape[2], self.w)
+                h = self.size-w
+            ind_h = random.randint(0, max(0, x.shape[1]-h))
+            ind_w = random.randint(0, max(0, x.shape[2]-w))
+            x = x[:, ind_h:ind_h + h, ind_w: ind_w + w]
+
+        padding_h = x.shape[1]%4
+        padding_w = x.shape[2]%4
+        x = F.pad(x, (0,0,padding_w, padding_h), padding_mode='reflect')
+        return x
 
 class CTDataset(BaseDataset):
     """
@@ -39,13 +62,15 @@ class CTDataset(BaseDataset):
             transforms.ToTensor(),
             transforms.Lambda(lambda x: self.center(x, opt.mean_norm)),
             # transforms.RandomCrop((148,100)),
+            RandomCropIfNecessary(1200),
             # transforms.Pad((1,0,0,0), padding_mode='reflect')
         ])
 
     def normalize(self, x):
         x_min = x.amin()
         x_max = x.amax()
-        x = (x - x_min) / x_max * 2. -1.
+        x = (x - x_min) / x_max * 2 -1
+        # x = (x-x.mean()) / 255.
         return x
 
     def center(self, x, mean):
