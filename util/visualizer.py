@@ -12,7 +12,7 @@ else:
     VisdomExceptionBase = ConnectionError
 
 
-def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
+def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256, mean=127.5, std=63.75):
     """Save images to the disk.
 
     Parameters:
@@ -32,7 +32,7 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256):
     ims, txts, links = [], [], []
 
     for label, im_data in visuals.items():
-        im = util.tensor2im(im_data)
+        im = util.tensor2im(im_data, mean, std)
         image_name = '%s/%s.png' % (label, name)
         os.makedirs(os.path.join(image_dir, label), exist_ok=True)
         save_path = os.path.join(image_dir, image_name)
@@ -127,7 +127,7 @@ class Visualizer():
                 images = []
                 idx = 0
                 for label, image in visuals.items():
-                    image_numpy = util.tensor2im(image, self.opt.mean_norm)
+                    image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                     label_html_row += '<td>%s</td>' % label
                     images.append(image_numpy.transpose([2, 0, 1]))
                     idx += 1
@@ -154,7 +154,7 @@ class Visualizer():
                 idx = 1
                 try:
                     for label, image in visuals.items():
-                        image_numpy = util.tensor2im(image, self.opt.mean_norm)
+                        image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                         self.vis.image(
                             image_numpy.transpose([2, 0, 1]),
                             self.display_id + idx,
@@ -169,7 +169,7 @@ class Visualizer():
             self.saved = True
             # save images to the disk
             for label, image in visuals.items():
-                image_numpy = util.tensor2im(image, self.opt.mean_norm)
+                image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                 img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
                 util.save_image(image_numpy, img_path)
 
@@ -180,7 +180,7 @@ class Visualizer():
                 ims, txts, links = [], [], []
 
                 for label, image_numpy in visuals.items():
-                    image_numpy = util.tensor2im(image, self.opt.mean_norm)
+                    image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                     img_path = 'epoch%.3d_%s.png' % (n, label)
                     ims.append(img_path)
                     txts.append(label)

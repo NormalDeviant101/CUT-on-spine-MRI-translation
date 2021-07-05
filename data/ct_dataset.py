@@ -60,7 +60,7 @@ class CTDataset(BaseDataset):
 
         self.transformations = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: self.center(x, opt.mean_norm)),
+            transforms.Lambda(lambda x: self.center(x, opt.mean_norm, opt.std_norm)),
             # transforms.RandomCrop((148,100)),
             RandomCropIfNecessary(1200),
             # transforms.Pad((1,0,0,0), padding_mode='reflect')
@@ -69,12 +69,11 @@ class CTDataset(BaseDataset):
     def normalize(self, x):
         x_min = x.amin()
         x_max = x.amax()
-        x = (x - x_min) / x_max * 2 -1
-        # x = (x-x.mean()) / 255.
+        x = (x - x_min) / x_max * 2. -1.
         return x
 
-    def center(self, x, mean):
-        return (x - mean) / (255-mean)
+    def center(self, x, mean, std):
+        return (x - mean) / std
 
     def __getitem__(self, index):
         """Return a data point and its metadata information.

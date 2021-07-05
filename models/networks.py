@@ -1000,6 +1000,8 @@ class ResnetGenerator(nn.Module):
         else:
             """Standard forward"""
             fake = self.model(input)
+            fake = ((fake+1)/2)*255.
+            fake = (fake-self.opt.mean_norm) / self.opt.std_norm
             return fake
 
 
