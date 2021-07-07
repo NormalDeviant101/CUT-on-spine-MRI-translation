@@ -155,7 +155,7 @@ class CUTModel(BaseModel):
                 if self.opt.nce_idt and self.opt.isTrain:
                     real_B_in = torch.flip(self.real_B, [3])
         self.fake_B = self.netG(real_A_in)
-        if self.opt.nce_idt:
+        if self.opt.nce_idt and self.opt.isTrain:
             self.idt_B = self.netG(real_B_in)
 
     def compute_D_loss(self):
