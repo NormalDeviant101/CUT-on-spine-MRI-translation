@@ -5,6 +5,7 @@ from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
 from tqdm import tqdm
+import numpy as np
 
 
 if __name__ == '__main__':
@@ -23,6 +24,7 @@ if __name__ == '__main__':
     visualizer = Visualizer(opt)   # create a visualizer that display/save images and plots
     opt.visualizer = visualizer
     total_iters = 0                # the total number of training iterations
+    validation_loss_fun = torch.nn.L1Loss()
 
     optimize_time = 0.1
 
@@ -92,6 +94,26 @@ if __name__ == '__main__':
                 model.save_networks(save_suffix)
 
             iter_data_time = time.time()
+
+        validation_loss_array = []
+        for i in range(len(test_dataset)):
+            opt.phase='test'
+            tmp = opt.serial_batches
+            opt.serial_batches=True
+            test_data = next(test_dataset_iter, None)
+            if test_data is None:
+                test_dataset_iter = iter(test_dataset)
+                test_data = next(test_dataset_iter, None)
+
+            model.set_input(test_data)
+            model.test()
+            validation_loss_array.append(validation_loss_fun(model.fake_B, model.real_B).item())
+        
+        val_loss = np.mean(validation_loss_array)
+        visualizer.print_validation_loss(epoch, val_loss)
+        visualizer.plot_current_validation_losses(epoch, val_loss)
+        opt.phase='train'
+        opt.serial_batches=tmp
 
         if epoch % opt.save_epoch_freq == 0:              # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))
