@@ -58,13 +58,16 @@ class CTDataset(BaseDataset):
         self.A_size = len(self.A_paths)
         self.B_size = len(self.B_paths)
 
-        self.transformations = transforms.Compose([
+        transformations = [
             transforms.ToTensor(),
             transforms.Lambda(lambda x: self.center(x, opt.mean_norm, opt.std_norm)),
             # transforms.RandomCrop((148,100)),
             RandomCropIfNecessary(1200),
             # transforms.Pad((1,0,0,0), padding_mode='reflect')
-        ])
+        ]
+        if(opt.isTrain):
+            transformations += [transforms.RandomHorizontalFlip(),transforms.RandomVerticalFlip()]
+        self.transformations = transforms.Compose(transformations)
 
     def normalize(self, x):
         x_min = x.amin()
