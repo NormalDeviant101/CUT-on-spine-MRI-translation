@@ -11,10 +11,11 @@ import numpy as np
 import torchvision.transforms.functional as F
 
 class RandomCropIfNecessary():
-    def __init__(self, size):
+    def __init__(self, size, n_downsampling):
         assert size%8==0
         self.size = size
         self.w = self.h = int(size/2)
+        self.n_downsampling = n_downsampling
 
     def __call__(self, x):
         if x.shape[1] + x.shape[2] > self.size:
@@ -28,8 +29,8 @@ class RandomCropIfNecessary():
             ind_w = random.randint(0, max(0, x.shape[2]-w))
             x = x[:, ind_h:ind_h + h, ind_w: ind_w + w]
 
-        padding_h = x.shape[1]%4
-        padding_w = x.shape[2]%4
+        padding_h = x.shape[1]%(2**self.n_downsampling)
+        padding_w = x.shape[2]%(2**self.n_downsampling)
         x = F.pad(x, (0,0,padding_w, padding_h), padding_mode='reflect')
         return x
 
@@ -51,8 +52,8 @@ class CTDataset(BaseDataset):
             opt (Option class) -- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
         BaseDataset.__init__(self, opt)
-        self.A_dir = os.path.join(self.opt.dataroot, 'aip', self.opt.phase+'_data')
-        self.B_dir = os.path.join(self.opt.dataroot, 'mip', self.opt.phase+'_data')
+        self.A_dir = os.path.join(self.opt.dataroot, 'ct', self.opt.phase)
+        self.B_dir = os.path.join(self.opt.dataroot, 'mri', self.opt.phase)
         self.A_paths = sorted(make_dataset(self.A_dir, opt.max_dataset_size)) 
         self.B_paths = sorted(make_dataset(self.B_dir, opt.max_dataset_size)) 
         self.A_size = len(self.A_paths)
@@ -62,7 +63,7 @@ class CTDataset(BaseDataset):
             transforms.ToTensor(),
             transforms.Lambda(lambda x: self.center(x, opt.mean_norm, opt.std_norm)),
             # transforms.RandomCrop((148,100)),
-            RandomCropIfNecessary(1200),
+            RandomCropIfNecessary(1200, opt.n_downsampling),
             # transforms.Pad((1,0,0,0), padding_mode='reflect')
         ]
         if(opt.isTrain):

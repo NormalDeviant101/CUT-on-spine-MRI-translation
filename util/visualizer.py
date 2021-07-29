@@ -240,3 +240,14 @@ class Visualizer():
         print(message)  # print the message
         with open(self.log_name, "a") as log_file:
             log_file.write('%s\n' % message)  # save the message
+
+    def print_and_get_loss_message(self, epoch, iters, losses, t_comp, t_data):
+        message1 = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
+        message2 = '(epoch: %d) '%epoch
+        for k, v in losses.items():
+            message1 += '%s: %.3f ' % (k, v)
+            message2 += '%s: %.3f ' % (k, v)
+
+        with open(self.log_name, "a") as log_file:
+            log_file.write('%s\n' % message1)  # save the message
+        return message2

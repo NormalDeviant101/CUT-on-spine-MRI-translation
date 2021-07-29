@@ -4,6 +4,7 @@ from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
+from tqdm import tqdm
 
 
 if __name__ == '__main__':
@@ -33,7 +34,10 @@ if __name__ == '__main__':
         visualizer.reset()              # reset the visualizer: make sure it saves the results to HTML at least once every epoch
 
         dataset.set_epoch(epoch)
-        for i, data in enumerate(dataset):  # inner loop within one epoch
+        pbar = tqdm(dataset)
+        message = '(epoch: %d)'%epoch
+        for i, data in enumerate(pbar):  # inner loop within one epoch
+            pbar.set_description(message)
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
@@ -76,7 +80,8 @@ if __name__ == '__main__':
 
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
-                visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                # visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                message = visualizer.print_and_get_loss_message(epoch, epoch_iter, losses, optimize_time, t_data)
                 if opt.display_id is None or opt.display_id > 0:
                     visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
 
