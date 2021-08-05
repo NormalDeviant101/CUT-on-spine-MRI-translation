@@ -51,6 +51,7 @@ class BaseOptions():
         parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
         parser.add_argument('--mean_norm', default=127.5, type=float, help='mean of pixel intensity of dataset. E.g. 50.7 for VerSe')
         parser.add_argument('--std_norm', default=67.5, type=float, help='mean of pixel intensity of dataset. E.g. 30.4 for VerSe')
+        parser.add_argument('--uniform_size', default=None, type=str, help='Pad images to the given max size')
         parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
@@ -163,6 +164,7 @@ class BaseOptions():
                 opt.gpu_ids.append(id)
         if len(opt.gpu_ids) > 0:
             torch.cuda.set_device(opt.gpu_ids[0])
+        opt.uniform_size = tuple(map(int, opt.uniform_size.split(','))) if opt.uniform_size is not None else None
 
         self.opt = opt
         return self.opt

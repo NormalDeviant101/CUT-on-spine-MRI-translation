@@ -9,6 +9,8 @@ import numpy as np
 from torchvision import transforms
 import numpy as np
 import torchvision.transforms.functional as F
+from torch import Tensor
+import math
 
 class RandomCropIfNecessary():
     def __init__(self, size, n_downsampling):
@@ -32,6 +34,20 @@ class RandomCropIfNecessary():
         padding_h = x.shape[1]%(2**self.n_downsampling)
         padding_w = x.shape[2]%(2**self.n_downsampling)
         x = F.pad(x, (0,0,padding_w, padding_h), padding_mode='reflect')
+        return x
+
+class PadTo():
+    def __init__(self, height: int, width: int):
+        assert width%4 == 0 and height%4 == 0
+        self.width = width
+        self.height = height
+
+    def __call__(self, x: Tensor) -> Tensor:
+        h = x.shape[-2]
+        w = x.shape[-1]
+        pad = (math.floor((self.width-w)/2.), math.floor((self.height-h)/2.), math.ceil((self.width-w)/2.), math.ceil((self.height-h)/2.))
+        assert min(pad)>=0, 'The encoutered image with shape %s is bigger than the configured maximum dimension'%str(x.shape)
+        x = F.pad(x, pad, fill=0, padding_mode='constant')
         return x
 
 class CTDataset(BaseDataset):
@@ -63,7 +79,7 @@ class CTDataset(BaseDataset):
             transforms.ToTensor(),
             transforms.Lambda(lambda x: self.center(x, opt.mean_norm, opt.std_norm)),
             # transforms.RandomCrop((148,100)),
-            RandomCropIfNecessary(1200, opt.n_downsampling),
+            RandomCropIfNecessary(1200, opt.n_downsampling) if opt.uniform_size is None else PadTo(*opt.uniform_size),
             # transforms.Pad((1,0,0,0), padding_mode='reflect')
         ]
         if(opt.isTrain):
