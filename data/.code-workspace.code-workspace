@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../VerSe_CUT"
+		},
+		{
+			"path": "../../../../media/data_4T/william/CT_2_MRI"
+		}
+	],
+	"settings": {
+		"python.pythonPath": "/home/william/anaconda3/envs/williamve/bin/python"
+	}
+}
