@@ -89,7 +89,7 @@ class CTDataset(BaseDataset):
     def normalize(self, x):
         x_min = x.amin()
         x_max = x.amax()
-        x = (x - x_min) / x_max * 2. -1.
+        x = (x - x_min) / (x_max - x_min) * 2. -1.
         return x
 
     def center(self, x, mean, std):
