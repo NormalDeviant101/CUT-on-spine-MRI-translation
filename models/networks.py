@@ -255,8 +255,8 @@ def define_G(input_nc, output_nc, ngf, netG: str, norm='batch', use_dropout=Fals
     net = None
     norm_layer = get_norm_layer(norm_type=norm)
 
-    if netG.startswith('resnet'):
-        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=opt.num_g_blocks, opt=opt)
+    if netG == 'resnet':
+        net = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, no_antialias=no_antialias, no_antialias_up=no_antialias_up, n_blocks=opt.ngl, opt=opt)
     elif netG == 'unet_128':
         net = UnetGenerator(input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout)
     elif netG == 'unet_256':
@@ -964,7 +964,7 @@ class ResnetGenerator(nn.Module):
                  norm_layer(ngf),
                  nn.ReLU(True)]
 
-        n_downsampling = opt.g_downsampling
+        n_downsampling = opt.n_downsampling
         for i in range(n_downsampling):  # add downsampling layers
             mult = 2 ** i
             if(no_antialias):
@@ -1028,6 +1028,8 @@ class ResnetGenerator(nn.Module):
         else:
             """Standard forward"""
             fake = self.model(input)
+            fake = ((fake+1)/2)*255.
+            fake = (fake-self.opt.mean_norm) / self.opt.std_norm
             return fake
 
 

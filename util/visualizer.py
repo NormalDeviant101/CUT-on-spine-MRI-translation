@@ -1,16 +1,10 @@
 import numpy as np
 import os
 import sys
-import glob
 import ntpath
-import random as rd
 import time
-
-from PIL import Image
-import math
 from . import util, html
 from subprocess import Popen, PIPE
-from skimage.color import rgb2gray
 
 if sys.version_info[0] == 2:
     VisdomExceptionBase = Exception
@@ -18,7 +12,7 @@ else:
     VisdomExceptionBase = ConnectionError
 
 
-def save_images(webpage, visuals, image_path, aspect_ratio=1.0):
+def save_images(webpage, visuals, image_path, aspect_ratio=1.0, width=256, mean=127.5, std=63.75):
     """Save images to the disk.
 
     Parameters:
@@ -38,7 +32,7 @@ def save_images(webpage, visuals, image_path, aspect_ratio=1.0):
     ims, txts, links = [], [], []
 
     for label, im_data in visuals.items():
-        im = util.tensor2im(im_data)
+        im = util.tensor2im(im_data, mean, std)
         image_name = '%s/%s.png' % (label, name)
         os.makedirs(os.path.join(image_dir, label), exist_ok=True)
         save_path = os.path.join(image_dir, image_name)
@@ -94,9 +88,13 @@ class Visualizer():
             util.mkdirs([self.web_dir, self.img_dir])
         # create a logging file to store training losses
         self.log_name = os.path.join(opt.checkpoints_dir, opt.name, 'loss_log.txt')
+        self.val_loss_log_name = os.path.join(opt.checkpoints_dir, opt.name, 'val_loss_log.txt')
         with open(self.log_name, "a") as log_file:
             now = time.strftime("%c")
             log_file.write('================ Training Loss (%s) ================\n' % now)
+        with open(self.val_loss_log_name, "a") as log_file:
+            now = time.strftime("%c")
+            log_file.write('================ Validation Loss (%s) ================\n' % now)
 
     def reset(self):
         """Reset the self.saved status"""
@@ -133,7 +131,7 @@ class Visualizer():
                 images = []
                 idx = 0
                 for label, image in visuals.items():
-                    image_numpy = util.tensor2im(image)
+                    image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                     label_html_row += '<td>%s</td>' % label
                     images.append(image_numpy.transpose([2, 0, 1]))
                     idx += 1
@@ -160,7 +158,7 @@ class Visualizer():
                 idx = 1
                 try:
                     for label, image in visuals.items():
-                        image_numpy = util.tensor2im(image)
+                        image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                         self.vis.image(
                             image_numpy.transpose([2, 0, 1]),
                             self.display_id + idx,
@@ -175,7 +173,7 @@ class Visualizer():
             self.saved = True
             # save images to the disk
             for label, image in visuals.items():
-                image_numpy = util.tensor2im(image)
+                image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                 img_path = os.path.join(self.img_dir, 'epoch%.3d_%s.png' % (epoch, label))
                 util.save_image(image_numpy, img_path)
 
@@ -186,7 +184,7 @@ class Visualizer():
                 ims, txts, links = [], [], []
 
                 for label, image_numpy in visuals.items():
-                    image_numpy = util.tensor2im(image)
+                    image_numpy = util.tensor2im(image, self.opt.mean_norm, self.opt.std_norm)
                     img_path = 'epoch%.3d_%s.png' % (n, label)
                     ims.append(img_path)
                     txts.append(label)
@@ -228,6 +226,38 @@ class Visualizer():
         except VisdomExceptionBase:
             self.create_visdom_connections()
 
+    def plot_current_validation_losses(self, epoch, loss):
+        """display the current validation losses on visdom display: dictionary of error labels and values
+
+        Parameters:
+            epoch (int)           -- current epoch
+            counter_ratio (float) -- progress (percentage) in the current epoch, between 0 to 1
+            losses (OrderedDict)  -- training losses stored in the format of (name, float) pairs
+        """
+
+        plot_name = 'validation_loss'
+
+        if plot_name not in self.plot_data:
+            self.plot_data[plot_name] = {'X': [], 'Y': [], 'legend': ['validation loss']}
+
+        plot_data = self.plot_data[plot_name]
+        plot_id = list(self.plot_data.keys()).index('validation_loss')
+
+        plot_data['X'].append(epoch*1.)
+        plot_data['Y'].append(loss)
+        try:
+            self.vis.line(
+                X=np.array(plot_data['X']),
+                Y=np.array(plot_data['Y']),
+                opts={
+                    'title': self.name,
+                    'legend': plot_data['legend'],
+                    'xlabel': 'epoch',
+                    'ylabel': 'val_loss'},
+                win=self.display_id - plot_id)
+        except VisdomExceptionBase:
+            self.create_visdom_connections()
+
     # losses: same format as |losses| of plot_current_losses
     def print_current_losses(self, epoch, iters, losses, t_comp, t_data):
         """print current losses on console; also save the losses to the disk
@@ -254,3 +284,20 @@ class Visualizer():
 
     def get_visual_items(visuals):
         return visuals.items()
+
+    def print_and_get_loss_message(self, epoch, iters, losses, t_comp, t_data):
+        message1 = '(epoch: %d, iters: %d, time: %.3f, data: %.3f) ' % (epoch, iters, t_comp, t_data)
+        message2 = '(epoch: %d) '%epoch
+        for k, v in losses.items():
+            message1 += '%s: %.3f ' % (k, v)
+            message2 += '%s: %.3f ' % (k, v)
+
+        with open(self.log_name, "a") as log_file:
+            log_file.write('%s\n' % message1)  # save the message
+        return message2
+
+    def print_validation_loss(self, epoch, loss):
+        message = 'Validation loss epoch %d: %.3f'%(epoch, loss)
+        with open(self.val_loss_log_name, "a") as log_file:
+            log_file.write('%s\n' % message)  # save the message
+

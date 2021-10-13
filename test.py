@@ -46,7 +46,7 @@ if __name__ == '__main__':
     opt.display_id = -1   # no visdom display; the test code saves the results to a HTML file.
     opt.use_mask = False
     dataset = create_dataset(opt)  # create a dataset given opt.dataset_mode and other options
-    train_dataset = create_dataset(util.copyconf(opt, phase="train"))
+    # train_dataset = create_dataset(util.copyconf(opt, phase="train"))
     model = create_model(opt)      # create a model given opt.model and other options
     # create a webpage for viewing the results
     web_dir = os.path.join(opt.results_dir, opt.name, '{}_{}'.format(opt.phase, opt.epoch))  # define the website directory
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         img_path = model.get_image_paths()     # get image paths
         if i % 1 == 0:  # save images to an HTML file
             print('processing (%04d)-th image... %s' % (i, img_path))
-        save_images(webpage, visuals, img_path)
+        save_images(webpage, visuals, img_path, width=opt.display_winsize, mean=opt.mean_norm, std=opt.std_norm)
     webpage.save()  # save the HTML
 
 

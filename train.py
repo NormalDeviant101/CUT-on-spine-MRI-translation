@@ -6,13 +6,14 @@ sys.path.append(".")
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-from torchsummary import summary
 import time
 import torch
 from options.train_options import TrainOptions
 from data import create_dataset
 from models import create_model
 from util.visualizer import Visualizer
+from tqdm import tqdm
+import numpy as np
 
 CUDA_VISIBLE_DEVICES= 0,1,2
 
@@ -39,6 +40,8 @@ if __name__ == '__main__':
     visualizer = Visualizer(opt)   # create a visualizer that display/save images and plots
     opt.visualizer = visualizer
     total_iters = 0                # the total number of training iterations
+    validation_loss_fun = torch.nn.L1Loss()
+
     optimize_time = 0.1
 
     times = []
@@ -51,9 +54,10 @@ if __name__ == '__main__':
         visualizer.reset()              # reset the visualizer: make sure it saves the results to HTML at least once every epoch
 
         dataset.set_epoch(epoch)
-        #model.print_model_names()
-
-        for i, data in enumerate(dataset):  # inner loop within one epoch
+        pbar = tqdm(dataset)
+        message = '(epoch: %d)'%epoch
+        for i, data in enumerate(pbar):  # inner loop within one epoch
+            pbar.set_description(message)
             iter_start_time = time.time()  # timer for computation per iteration
             if total_iters % opt.print_freq == 0:
                 t_data = iter_start_time - iter_data_time
@@ -97,9 +101,14 @@ if __name__ == '__main__':
                 save_result = total_iters % opt.update_html_freq == 0
                 visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
 
+                # save_result = total_iters % opt.update_html_freq == 0
+                # model.compute_visuals()
+                # visualizer.display_current_results(model.get_current_visuals(), epoch, save_result)
+
             if total_iters % opt.print_freq == 0:    # print training losses and save logging information to the disk
                 losses = model.get_current_losses()
-                visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                # visualizer.print_current_losses(epoch, epoch_iter, losses, optimize_time, t_data)
+                message = visualizer.print_and_get_loss_message(epoch, epoch_iter, losses, optimize_time, t_data)
                 if opt.display_id is None or opt.display_id > 0:
                     visualizer.plot_current_losses(epoch, float(epoch_iter) / dataset_size, losses)
 
@@ -110,6 +119,26 @@ if __name__ == '__main__':
                 model.save_networks(save_suffix)
 
             iter_data_time = time.time()
+
+        validation_loss_array = []
+        for i in range(len(test_dataset)):
+            opt.phase='test'
+            tmp = opt.serial_batches
+            opt.serial_batches=True
+            test_data = next(test_dataset_iter, None)
+            if test_data is None:
+                test_dataset_iter = iter(test_dataset)
+                test_data = next(test_dataset_iter, None)
+
+            model.set_input(test_data)
+            model.test()
+            validation_loss_array.append(validation_loss_fun(model.fake_B, model.real_B).item())
+        
+        val_loss = np.mean(validation_loss_array)
+        visualizer.print_validation_loss(epoch, val_loss)
+        visualizer.plot_current_validation_losses(epoch, val_loss)
+        opt.phase='train'
+        opt.serial_batches=tmp
 
         if epoch % opt.save_epoch_freq == 0:              # cache our model every <save_epoch_freq> epochs
             print('saving the model at the end of epoch %d, iters %d' % (epoch, total_iters))

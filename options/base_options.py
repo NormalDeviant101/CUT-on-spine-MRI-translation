@@ -35,8 +35,9 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
         parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in the first conv layer')
         parser.add_argument('--netD', type=str, default='basic', choices=['basic', 'n_layers', 'pixel', 'patch', 'tilestylegan2', 'stylegan2'], help='specify discriminator architecture. The basic model is a 70x70 PatchGAN. n_layers allows you to specify the layers in the discriminator')
-        parser.add_argument('--netG', type=str, default='resnet_9blocks', choices=['resnet_9blocks', 'resnet_6blocks','resnet_4blocks', 'resnet_1block', 'unet_256', 'unet_128', 'stylegan2', 'smallstylegan2', 'resnet_cat'], help='specify generator architecture')
-        parser.add_argument('--num_g_blocks', type=int, default=9, help='number of resnet blocks for the generator')
+        parser.add_argument('--netG', type=str, default='resnet', choices=['resnet', 'unet_256', 'unet_128', 'stylegan2', 'smallstylegan2', 'resnet_cat'], help='specify generator architecture')
+        parser.add_argument('--ngl', type=int, default=6, help='# of resnet layers')
+        parser.add_argument('--n_downsampling', type=int, default=2, help='# of downsampling layers')
         parser.add_argument('--n_layers_D', type=int, default=3, help='only used if netD==n_layers')
         parser.add_argument('--normG', type=str, default='instance', choices=['instance', 'batch', 'none'], help='instance normalization or batch normalization for G')
         parser.add_argument('--normD', type=str, default='instance', choices=['instance', 'batch', 'none'], help='instance normalization or batch normalization for D')
@@ -48,6 +49,9 @@ class BaseOptions():
         parser.add_argument('--no_antialias_up', action='store_true', help='if specified, use [upconv(learned filter)] instead of [upconv(hard-coded [1,3,3,1] filter), conv]')
         # dataset parameters
         parser.add_argument('--dataset_mode', type=str, default='unaligned', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
+        parser.add_argument('--mean_norm', default=127.5, type=float, help='mean of pixel intensity of dataset. E.g. 50.7 for VerSe')
+        parser.add_argument('--std_norm', default=67.5, type=float, help='mean of pixel intensity of dataset. E.g. 30.4 for VerSe')
+        parser.add_argument('--uniform_size', default=None, type=str, help='Pad images to the given max size')
         parser.add_argument('--direction', type=str, default='AtoB', help='AtoB or BtoA')
         parser.add_argument('--serial_batches', action='store_true', help='if true, takes images in order to make batches, otherwise takes them randomly')
         parser.add_argument('--num_threads', default=4, type=int, help='# threads for loading data')
@@ -161,6 +165,7 @@ class BaseOptions():
                 opt.gpu_ids.append(id)
         if len(opt.gpu_ids) > 0:
             torch.cuda.set_device(opt.gpu_ids[0])
+        opt.uniform_size = tuple(map(int, opt.uniform_size.split(','))) if opt.uniform_size is not None else None
 
         self.opt = opt
         return self.opt

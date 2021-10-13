@@ -105,20 +105,6 @@ class BaseModel(ABC):
         for name in self.model_names:
             print(name)
 
-    def save_network_architecture(self):
-        networks = [getattr(self, 'net' + name) for name in self.model_names]
-        save_filename = 'architecture.txt'
-        save_path = os.path.join(self.save_dir, save_filename)
-
-        architecture = ''
-        for n in networks:
-            architecture += str(n) + '\n'
-        with open(save_path, 'w') as f:
-            f.write(architecture)
-            f.flush()
-            f.close()
-
-
     def parallelize(self):
         for name in self.model_names:
             print('We are using Parallel Training with', len(self.opt.gpu_ids), 'GPUs on', name)
@@ -266,6 +252,19 @@ class BaseModel(ABC):
                 print('[Network %s] Total number of parameters : %.3f M' % (name, num_params / 1e6))
         print('-----------------------------------------------')
 
+    def save_network_architecture(self):
+        networks = [getattr(self, 'net' + name) for name in self.model_names]
+        save_filename = 'architecture.txt'
+        save_path = os.path.join(self.save_dir, save_filename)
+
+        architecture = ''
+        for n in networks:
+            architecture += str(n) + '\n'
+        with open(save_path, 'w') as f:
+            f.write(architecture)
+            f.flush()
+            f.close()
+    
     def set_requires_grad(self, nets, requires_grad=False):
         """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
         Parameters:

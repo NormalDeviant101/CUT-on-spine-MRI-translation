@@ -186,17 +186,18 @@ class CUTModel(BaseModel):
 
     def forward(self):
         """Run forward pass; called by both functions <optimize_parameters> and <test>."""
-        real_B_broadcast = self.real_B.expand(-1, 3, -1, -1)
-        self.real = torch.cat((self.real_A, real_B_broadcast), dim=0) if self.opt.nce_idt and self.opt.isTrain else self.real_A
+        real_A_in = self.real_A
+        if self.opt.nce_idt and self.opt.isTrain:
+            real_B_in = self.real_B
         if self.opt.flip_equivariance:
             self.flipped_for_equivariance = self.opt.isTrain and (np.random.random() < 0.5)
             if self.flipped_for_equivariance:
-                self.real = torch.flip(self.real, [3])
-
-        self.fake = self.netG(self.real)
-        self.fake_B = self.fake[:self.real_A.size(0)]
-        if self.opt.nce_idt:
-            self.idt_B = self.fake[self.real_A.size(0):]
+                real_A_in = torch.flip(self.real_A, [3])
+                if self.opt.nce_idt and self.opt.isTrain:
+                    real_B_in = torch.flip(self.real_B, [3])
+        self.fake_B = self.netG(real_A_in)
+        if self.opt.nce_idt and self.opt.isTrain:
+            self.idt_B = self.netG(real_B_in)
 
     def compute_D_loss_mask(self):
         # Loss of the Mask_Fake(Mask_A) multiply with Fake Image ; Masked Fake.
